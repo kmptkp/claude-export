@@ -43,7 +43,10 @@ const getContents = require('./util/getContents');
       for (var n = 0; n < childNodes.length; n++) {
         const childNode = childNodes[n];
 
-        if (childNode.nodeType === Node.ELEMENT_NODE) {
+        if (childNode.nodeType === Node.TEXT_NODE) {
+          message.push(firstChild.textContent);
+        }
+        else if (childNode.nodeType === Node.ELEMENT_NODE) {
           var tag = childNode.tagName;
           var text = childNode.textContent;
           // Paragraphs
