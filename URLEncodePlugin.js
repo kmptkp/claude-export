@@ -6,7 +6,7 @@ class URLEncodePlugin {
       for (let filename in compilation.assets) {
         if (filename.endsWith('.js')) {
           const content = compilation.assets[filename].source();
-          const encodedContent = 'javacript:' + encodeURIComponent(content);
+          const encodedContent = 'javascript:' + encodeURIComponent(content);
           compilation.assets[filename + '.urlencoded'] = new RawSource(encodedContent);
           // compilation.assets[filename] = new RawSource(encodedContent);
         }

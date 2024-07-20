@@ -1,6 +1,7 @@
 const consoleSave = require("./util/consoleSave");
 const getTimestamp = require("./util/getTimestamp");
 const getContents = require("./util/getContents");
+const { ol_number } = require("./util/parse");
 
 (function exportMarkdown() {
   var markdown = "";
@@ -55,7 +56,8 @@ const getContents = require("./util/getContents");
                 listItemNode.nodeType === Node.ELEMENT_NODE &&
                 listItemNode.tagName === "LI"
               ) {
-                markdown += `${index + 1}. ${
+                const index = ol_number(childNode, listItemNode);
+                markdown += `${index}. ${
                   listItemNode.textContent
                 }\n`;
               }
