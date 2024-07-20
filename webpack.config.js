@@ -1,6 +1,11 @@
 const TerserPlugin = require('terser-webpack-plugin');
+const URLEncodePlugin = require('./URLEncodePlugin');
+const path = require('path');
 
-module.exports = {
+module.exports = (env, argv) => {
+  const outputDir = env.outputDir || 'dist';
+
+  return {
   entry: {
     "json": "./src/exportJSON.js",
     "md": "./src/exportMarkdown.js",
@@ -8,7 +13,7 @@ module.exports = {
   },
   output: {
     filename: '[name].min.js',
-    path: __dirname + '/dist'
+    path: path.resolve(__dirname, outputDir)
   },
   module: {
     rules: [
@@ -35,5 +40,9 @@ module.exports = {
         }
       })
     ]
-  }
+  },
+  plugins: [
+    new URLEncodePlugin()
+  ]
+};
 };
