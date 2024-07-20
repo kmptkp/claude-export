@@ -1,7 +1,7 @@
 const consoleSave = require("./util/consoleSave");
 const getTimestamp = require("./util/getTimestamp");
 const getContents = require("./util/getContents");
-const { ol_number } = require("./util/parse");
+const { parse_ol } = require("./util/parse");
 
 (function exportMarkdown() {
   var markdown = "";
@@ -19,140 +19,125 @@ const { ol_number } = require("./util/parse");
     var firstChild = ele.firstChild;
     if (!firstChild) continue;
 
-    if (firstChild.tagName == 'DIV' && firstChild.childNodes.length == 1 && !!firstChild.classList) {
-      firstChild = firstChild.firstChild
-    }
-
-    // Element child
-    if (firstChild.nodeType === Node.ELEMENT_NODE) {
-      var childNodes = firstChild.childNodes;
-
-      // Prefix Claude reponse label
-      if (ele.classList.contains("font-claude-message")) {
-        markdown += `## Claude:\n`;
-      } else {
-        markdown += `## Me:\n`;
-      }
-
-      // Parse child elements
-      for (var n = 0; n < childNodes.length; n++) {
-        const childNode = childNodes[n];
-
-        if (childNode.nodeType === Node.TEXT_NODE) {
-          markdown += `${childNode.textContent}\n`;
-        }
-        else if (childNode.nodeType === Node.ELEMENT_NODE) {
-          var tag = childNode.tagName;
-          var text = childNode.textContent;
-          // Paragraphs
-          if (tag === "P") {
-            markdown += `${text}\n`;
-          }
-
-          // Get list items
-          if (tag === "OL") {
-            childNode.childNodes.forEach((listItemNode, index) => {
-              if (
-                listItemNode.nodeType === Node.ELEMENT_NODE &&
-                listItemNode.tagName === "LI"
-              ) {
-                const index = ol_number(childNode, listItemNode);
-                markdown += `${index}. ${
-                  listItemNode.textContent
-                }\n`;
-              }
-            });
-          }
-          if (tag === "UL") {
-            childNode.childNodes.forEach((listItemNode, index) => {
-              if (
-                listItemNode.nodeType === Node.ELEMENT_NODE &&
-                listItemNode.tagName === "LI"
-              ) {
-                markdown += `- ${listItemNode.textContent}\n`;
-              }
-            });
-          }
-
-          // Code blocks
-          if (tag === "PRE") {
-            preChildren = childNode.childNodes.length == 1 ? childNode.childNodes[0].childNodes : childNode.childNodes
-            const codeBlockLang = preChildren[0].textContent.trim();
-            const codeBlockData = preChildren[2].textContent.trim();
-            markdown += `\`\`\`${codeBlockLang}\n${codeBlockData}\n\`\`\`\n`;
-          }
-
-          // Tables
-          if (tag === "TABLE") {
-            // Get table sections
-            let tableMarkdown = "";
-            childNode.childNodes.forEach((tableSectionNode) => {
-              if (
-                tableSectionNode.nodeType === Node.ELEMENT_NODE &&
-                (tableSectionNode.tagName === "THEAD" ||
-                  tableSectionNode.tagName === "TBODY")
-              ) {
-                // Get table rows
-                let tableRows = "";
-                let tableColCount = 0;
-                tableSectionNode.childNodes.forEach(
-                  (tableRowNode) => {
-                    if (
-                      tableRowNode.nodeType === Node.ELEMENT_NODE &&
-                      tableRowNode.tagName === "TR"
-                    ) {
-                      // Get table cells
-                      let tableCells = "";
-
-                      tableRowNode.childNodes.forEach(
-                        (tableCellNode) => {
-                          if (
-                            tableCellNode.nodeType ===
-                              Node.ELEMENT_NODE &&
-                            (tableCellNode.tagName === "TD" ||
-                              tableCellNode.tagName === "TH")
-                          ) {
-                            tableCells += `| ${tableCellNode.textContent} `;
-                            if (
-                              tableSectionNode.tagName === "THEAD"
-                            ) {
-                              tableColCount++;
-                            }
-                          }
-                        }
-                      );
-                      tableRows += `${tableCells}|\n`;
-                    }
-                  }
-                );
-
-                tableMarkdown += tableRows;
-
-                if (tableSectionNode.tagName === "THEAD") {
-                  const headerRowDivider = `| ${Array(tableColCount)
-                    .fill("---")
-                    .join(" | ")} |\n`;
-                  tableMarkdown += headerRowDivider;
-                }
-              }
-            });
-            markdown += tableMarkdown;
-          }
-
-          // Paragraph break after each element
-          markdown += "\n";
-        }
-      }
-    }
-
     // Text child
     if (firstChild.nodeType === Node.TEXT_NODE) {
-      // Prefix User prompt label
-      // markdown += `_Prompt_: \n`;
-      // markdown += `${firstChild.textContent}\n`;
-
       // End of prompt paragraphs breaks
       markdown += "\n";
+      continue
+    }
+    
+    // Claude reponses have a different DOM structure than prompts
+    if (ele.classList.contains("font-claude-message")) {
+      markdown += `## Claude:\n`;
+      if (firstChild.tagName == 'DIV' && firstChild.childNodes.length == 1 && !!firstChild.classList) {
+        firstChild = firstChild.firstChild
+      }
+      contentNodes = firstChild.childNodes
+    } else {
+      markdown += `## Me:\n`;
+      contentNodes = ele.childNodes
+    }
+
+      // Parse child elements
+      for (var n = 0; n < contentNodes.length; n++) {
+      const childNode = contentNodes[n];
+
+      if (childNode.nodeType === Node.TEXT_NODE) {
+        markdown += `${childNode.textContent}\n`;
+      }
+      else if (childNode.nodeType === Node.ELEMENT_NODE) {
+        var tag = childNode.tagName;
+        var text = childNode.textContent;
+        // Paragraphs
+        if (tag === "P") {
+          markdown += `${text}\n`;
+        }
+
+        // Get list items
+        if (tag === "OL") {
+          for (const [liNum, olText] of parse_ol(childNode)) {
+            markdown += `${liNum}. ${olText}\n`;
+          }
+        }
+        if (tag === "UL") {
+          childNode.childNodes.forEach((listItemNode, index) => {
+            if (
+              listItemNode.nodeType === Node.ELEMENT_NODE &&
+              listItemNode.tagName === "LI"
+            ) {
+              markdown += `- ${listItemNode.textContent}\n`;
+            }
+          });
+        }
+
+        // Code blocks
+        if (tag === "PRE") {
+          preChildren = childNode.childNodes.length == 1 ? childNode.childNodes[0].childNodes : childNode.childNodes
+          const codeBlockLang = preChildren[0].textContent.trim();
+          const codeBlockData = preChildren[2].textContent.trim();
+          markdown += `\`\`\`${codeBlockLang}\n${codeBlockData}\n\`\`\`\n`;
+        }
+
+        // Tables
+        if (tag === "TABLE") {
+          // Get table sections
+          let tableMarkdown = "";
+          childNode.childNodes.forEach((tableSectionNode) => {
+            if (
+              tableSectionNode.nodeType === Node.ELEMENT_NODE &&
+              (tableSectionNode.tagName === "THEAD" ||
+                tableSectionNode.tagName === "TBODY")
+            ) {
+              // Get table rows
+              let tableRows = "";
+              let tableColCount = 0;
+              tableSectionNode.childNodes.forEach(
+                (tableRowNode) => {
+                  if (
+                    tableRowNode.nodeType === Node.ELEMENT_NODE &&
+                    tableRowNode.tagName === "TR"
+                  ) {
+                    // Get table cells
+                    let tableCells = "";
+
+                    tableRowNode.childNodes.forEach(
+                      (tableCellNode) => {
+                        if (
+                          tableCellNode.nodeType ===
+                            Node.ELEMENT_NODE &&
+                          (tableCellNode.tagName === "TD" ||
+                            tableCellNode.tagName === "TH")
+                        ) {
+                          tableCells += `| ${tableCellNode.textContent} `;
+                          if (
+                            tableSectionNode.tagName === "THEAD"
+                          ) {
+                            tableColCount++;
+                          }
+                        }
+                      }
+                    );
+                    tableRows += `${tableCells}|\n`;
+                  }
+                }
+              );
+
+              tableMarkdown += tableRows;
+
+              if (tableSectionNode.tagName === "THEAD") {
+                const headerRowDivider = `| ${Array(tableColCount)
+                  .fill("---")
+                  .join(" | ")} |\n`;
+                tableMarkdown += headerRowDivider;
+              }
+            }
+          });
+          markdown += tableMarkdown;
+        }
+
+        // Paragraph break after each element
+        markdown += "\n";
+      }
     }
   }
 
