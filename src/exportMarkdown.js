@@ -18,6 +18,10 @@ const getContents = require("./util/getContents");
     var firstChild = ele.firstChild;
     if (!firstChild) continue;
 
+    if (firstChild.tagName == 'DIV' && firstChild.childNodes.length == 1 && !!firstChild.classList) {
+      firstChild = firstChild.firstChild
+    }
+
     // Element child
     if (firstChild.nodeType === Node.ELEMENT_NODE) {
       var childNodes = firstChild.childNodes;
@@ -70,9 +74,9 @@ const getContents = require("./util/getContents");
 
           // Code blocks
           if (tag === "PRE") {
-            const codeBlockSplit = text.split("Copy code");
-            const codeBlockLang = codeBlockSplit[0].trim();
-            const codeBlockData = codeBlockSplit[1].trim();
+            preChildren = childNode.childNodes.length == 1 ? childNode.childNodes[0].childNodes : childNode.childNodes
+            const codeBlockLang = preChildren[0].textContent.trim();
+            const codeBlockData = preChildren[2].textContent.trim();
             markdown += `\`\`\`${codeBlockLang}\n${codeBlockData}\n\`\`\`\n`;
           }
 
