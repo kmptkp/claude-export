@@ -78,6 +78,13 @@ const { parse_ol } = require("./util/parse");
           markdown += `\`\`\`${codeBlockLang}\n${codeBlockData}\n\`\`\`\n`;
         }
 
+        // Quotes
+        if (tag === "BLOCKQUOTE") {
+          for (const line of text.trim().split("\n")) {
+            markdown += `> ${line}\n`;
+          }
+        }
+
         // Tables
         if (tag === "TABLE") {
           // Get table sections
