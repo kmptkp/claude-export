@@ -2,7 +2,8 @@ module.exports = function (console, fileType, title = "") {
   console.save = function (data) {
     let mimeType = "text/plain";
 
-    let filename = title ? title.trim().toLowerCase().replace(/^[^\w\d]+|[^\w\d]+$/g, '').replace(/[\s\W-]+/g, '-') : "claude";
+    let filename = title ? title.trim().toLowerCase().replace(/^[^\w\d]+|[^\w\d]+$/g, '').replace(/[\s\W-]+/g, '-') : "untitled";
+    filename = "claude_" + filename
     if (fileType.toLowerCase() === "json") {
       filename += ".json";
       mimeType = "text/json";

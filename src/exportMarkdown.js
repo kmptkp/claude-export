@@ -29,9 +29,9 @@ const { ol_number } = require("./util/parse");
 
       // Prefix Claude reponse label
       if (ele.classList.contains("font-claude-message")) {
-        markdown += `_Claude_:\n`;
+        markdown += `## Claude:\n`;
       } else {
-        markdown += `_Prompt_:\n`;
+        markdown += `## Me:\n`;
       }
 
       // Parse child elements
