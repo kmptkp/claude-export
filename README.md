@@ -4,15 +4,21 @@
     ./LICENSE
 )
 
-![Working as of March 20, 2024](https://img.shields.io/badge/working%20as%20of-%20march%2020,%202024-blue)
+![Working as of March 20, 2024](https://img.shields.io/badge/working%20as%20of-July%2020%2C%202024-blue)
 
-This browser script formats and downloads Anthropic Claude conversations to markdown, JSON, and PNG for sharing and exporting chat logs.
+This browser script formats and downloads Anthropic Claude conversations to markdown, JSON, and PNG for sharing and exporting chat logs. This happens entirely locally. No data is sent to any server. The most convenient way of using it is to set it up as a bookmarklet, the quickets one-off is to paste it into the browser console while you're chatting with Claude.
 
-You can export the active Claude chat log directly from the browser console, entirely locally. No data is sent to any server.
+**Supports the latest Claude web UI as of July 20, 2024.**
 
-**Supports the latest Claude web UI as of March 20, 2024.**
+## Usage as a bookmarklet
 
-## Usage
+ 1. Right-click on your browser bookmark bar and choose to add a new bookmark
+ 2. Copy the code in `md.min.js.urlencoded` or `json.min.js.urlencoded` or `image.min.js.urlencoded`
+ 3. Paste it into the `url` field of your new bookmark
+ 4. From now on, everytime you are in a Claude chat, you can export by clicking on that bookmark
+
+
+## Usage from the browser console
 
  1. Navigate to [claude.ai](https://claude.ai).
  2. Open the chat thread you'd like to export.
@@ -20,7 +26,7 @@ You can export the active Claude chat log directly from the browser console, ent
  4. Follow the below steps depending on which output type you'd like.
 
 > [!IMPORTANT]  
-> Always be careful when pasting code into the console. Only paste code from trusted sources, as it can be used to execute malicious code.
+> Always be careful when pasting code into your browser, as it can be used to execute malicious code.
 > You can explore this repository and verify the code before pasting it into the console, or clone and build the code yourself.
 
 ### JSON
@@ -123,6 +129,10 @@ It currently supports:
 - Lists
 - Code blocks
 - Tables
+
+## Dev
+
+Generate the minimised and ready-for-bookmarklet code, run `npm run build`. If you want to test it locally and not commit it to git, you can `npm run private`.
 
 ## Acknowledgements
 
