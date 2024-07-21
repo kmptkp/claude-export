@@ -1,11 +1,5 @@
 // parsing helpers
 
-// function ol_number(ol_node, li_node) {
-//   const start = ol_node.getAttribute('start') || '1'
-//   const index = li_node.getAttribute('index') || '0'
-//   return Number.parseInt(start) + Number.parseInt(index)
-// }
-
 function parse_ol(ol_node) {
   const items = []
   let lastText, i
@@ -29,16 +23,7 @@ function parse_ol(ol_node) {
     } else if (listItemNode.nodeType !== Node.TEXT_NODE || listItemNode.textContent != "\n") {
       console.log(listItemNode)
       throw new Error(' *** non LI non TEXT node in OL', listItemNode.innerHTML)
-    } 
-    // else if (listItemNode.nodeType === Node.TEXT_NODE) {
-    //   console.log('items', items)
-    //   let lastText = lastText + listItemNode.textContent
-    //   const lastItem = items[items.length - 1]
-    //   lastItem[1] = lastText
-    // } else {
-    //   console.log(listItemNode)
-    //   throw new Error(' *** non LI non TEXT node in OL', listItemNode.innerHTML)
-    // }
+    }
   })
   return items
 }
