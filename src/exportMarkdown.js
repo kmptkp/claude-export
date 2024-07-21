@@ -3,6 +3,123 @@ const getTimestamp = require("./util/getTimestamp");
 const getContents = require("./util/getContents");
 const { parse_ol } = require("./util/parse");
 
+function mdFromCopyButton(el, md) {
+  return md
+}
+
+function mdFromDOM(topEl, md) {
+  // Parse child elements
+  contentNodes = topEl.childNodes
+  for (var n = 0; n < contentNodes.length; n++) {
+    const childNode = contentNodes[n];
+
+    if (childNode.nodeType === Node.TEXT_NODE) {
+      md += `${childNode.textContent}\n`;
+    }
+    else if (childNode.nodeType === Node.ELEMENT_NODE) {
+      var tag = childNode.tagName;
+      var text = childNode.textContent;
+      // Paragraphs
+      if (tag === "P") {
+        md += `${text}\n`;
+      }
+
+      // Get list items
+      if (tag === "OL") {
+        for (const [liNum, olText] of parse_ol(childNode)) {
+          md += `${liNum}. ${olText}\n`;
+        }
+      }
+      if (tag === "UL") {
+        childNode.childNodes.forEach((listItemNode, index) => {
+          if (
+            listItemNode.nodeType === Node.ELEMENT_NODE &&
+            listItemNode.tagName === "LI"
+          ) {
+            md += `- ${listItemNode.textContent}\n`;
+          }
+        });
+      }
+
+      // Code blocks
+      if (tag === "PRE") {
+        preChildren = childNode.childNodes.length == 1 ? childNode.childNodes[0].childNodes : childNode.childNodes
+        const codeBlockLang = preChildren[0].textContent.trim();
+        const codeBlockData = preChildren[2].textContent.trim();
+        md += `\`\`\`${codeBlockLang}\n${codeBlockData}\n\`\`\`\n`;
+      }
+
+      // Quotes
+      if (tag === "BLOCKQUOTE") {
+        for (const line of text.trim().split("\n")) {
+          md += `> ${line}\n`;
+        }
+      }
+
+      // Tables
+      if (tag === "TABLE") {
+        // Get table sections
+        let tableMarkdown = "";
+        childNode.childNodes.forEach((tableSectionNode) => {
+          if (
+            tableSectionNode.nodeType === Node.ELEMENT_NODE &&
+            (tableSectionNode.tagName === "THEAD" ||
+              tableSectionNode.tagName === "TBODY")
+          ) {
+            // Get table rows
+            let tableRows = "";
+            let tableColCount = 0;
+            tableSectionNode.childNodes.forEach(
+              (tableRowNode) => {
+                if (
+                  tableRowNode.nodeType === Node.ELEMENT_NODE &&
+                  tableRowNode.tagName === "TR"
+                ) {
+                  // Get table cells
+                  let tableCells = "";
+
+                  tableRowNode.childNodes.forEach(
+                    (tableCellNode) => {
+                      if (
+                        tableCellNode.nodeType ===
+                          Node.ELEMENT_NODE &&
+                        (tableCellNode.tagName === "TD" ||
+                          tableCellNode.tagName === "TH")
+                      ) {
+                        tableCells += `| ${tableCellNode.textContent} `;
+                        if (
+                          tableSectionNode.tagName === "THEAD"
+                        ) {
+                          tableColCount++;
+                        }
+                      }
+                    }
+                  );
+                  tableRows += `${tableCells}|\n`;
+                }
+              }
+            );
+
+            tableMarkdown += tableRows;
+
+            if (tableSectionNode.tagName === "THEAD") {
+              const headerRowDivider = `| ${Array(tableColCount)
+                .fill("---")
+                .join(" | ")} |\n`;
+              tableMarkdown += headerRowDivider;
+            }
+          }
+        });
+        md += tableMarkdown;
+      }
+
+      // Paragraph break after each element
+      md += "\n";
+    }
+  }
+  return md
+}
+
 (function exportMarkdown() {
   var markdown = "";
   // var elements = document.querySelectorAll("[class*='min-h-[20px]']");
@@ -32,119 +149,10 @@ const { parse_ol } = require("./util/parse");
       if (firstChild.tagName == 'DIV' && firstChild.childNodes.length == 1 && !!firstChild.classList) {
         firstChild = firstChild.firstChild
       }
-      contentNodes = firstChild.childNodes
+      markdown = mdFromDOM(firstChild, markdown)
     } else {
       markdown += `## Me:\n`;
-      contentNodes = ele.childNodes
-    }
-
-      // Parse child elements
-      for (var n = 0; n < contentNodes.length; n++) {
-      const childNode = contentNodes[n];
-
-      if (childNode.nodeType === Node.TEXT_NODE) {
-        markdown += `${childNode.textContent}\n`;
-      }
-      else if (childNode.nodeType === Node.ELEMENT_NODE) {
-        var tag = childNode.tagName;
-        var text = childNode.textContent;
-        // Paragraphs
-        if (tag === "P") {
-          markdown += `${text}\n`;
-        }
-
-        // Get list items
-        if (tag === "OL") {
-          for (const [liNum, olText] of parse_ol(childNode)) {
-            markdown += `${liNum}. ${olText}\n`;
-          }
-        }
-        if (tag === "UL") {
-          childNode.childNodes.forEach((listItemNode, index) => {
-            if (
-              listItemNode.nodeType === Node.ELEMENT_NODE &&
-              listItemNode.tagName === "LI"
-            ) {
-              markdown += `- ${listItemNode.textContent}\n`;
-            }
-          });
-        }
-
-        // Code blocks
-        if (tag === "PRE") {
-          preChildren = childNode.childNodes.length == 1 ? childNode.childNodes[0].childNodes : childNode.childNodes
-          const codeBlockLang = preChildren[0].textContent.trim();
-          const codeBlockData = preChildren[2].textContent.trim();
-          markdown += `\`\`\`${codeBlockLang}\n${codeBlockData}\n\`\`\`\n`;
-        }
-
-        // Quotes
-        if (tag === "BLOCKQUOTE") {
-          for (const line of text.trim().split("\n")) {
-            markdown += `> ${line}\n`;
-          }
-        }
-
-        // Tables
-        if (tag === "TABLE") {
-          // Get table sections
-          let tableMarkdown = "";
-          childNode.childNodes.forEach((tableSectionNode) => {
-            if (
-              tableSectionNode.nodeType === Node.ELEMENT_NODE &&
-              (tableSectionNode.tagName === "THEAD" ||
-                tableSectionNode.tagName === "TBODY")
-            ) {
-              // Get table rows
-              let tableRows = "";
-              let tableColCount = 0;
-              tableSectionNode.childNodes.forEach(
-                (tableRowNode) => {
-                  if (
-                    tableRowNode.nodeType === Node.ELEMENT_NODE &&
-                    tableRowNode.tagName === "TR"
-                  ) {
-                    // Get table cells
-                    let tableCells = "";
-
-                    tableRowNode.childNodes.forEach(
-                      (tableCellNode) => {
-                        if (
-                          tableCellNode.nodeType ===
-                            Node.ELEMENT_NODE &&
-                          (tableCellNode.tagName === "TD" ||
-                            tableCellNode.tagName === "TH")
-                        ) {
-                          tableCells += `| ${tableCellNode.textContent} `;
-                          if (
-                            tableSectionNode.tagName === "THEAD"
-                          ) {
-                            tableColCount++;
-                          }
-                        }
-                      }
-                    );
-                    tableRows += `${tableCells}|\n`;
-                  }
-                }
-              );
-
-              tableMarkdown += tableRows;
-
-              if (tableSectionNode.tagName === "THEAD") {
-                const headerRowDivider = `| ${Array(tableColCount)
-                  .fill("---")
-                  .join(" | ")} |\n`;
-                tableMarkdown += headerRowDivider;
-              }
-            }
-          });
-          markdown += tableMarkdown;
-        }
-
-        // Paragraph break after each element
-        markdown += "\n";
-      }
+      markdown = mdFromDOM(ele, markdown)
     }
   }
 
