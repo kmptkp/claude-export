@@ -3,7 +3,23 @@ const getTimestamp = require("./util/getTimestamp");
 const getContents = require("./util/getContents");
 const { parse_ol } = require("./util/parse");
 
-function mdFromCopyButton(el, md) {
+async function mdFromCopyButton(topEl, md) {
+  var clip = navigator.clipboard;
+  if (!clip._writeText) clip._writeText = navigator.clipboard.writeText;
+  for (var copy of Array.from(topEl.nextSibling.getElementsByTagName("button")).filter(b => b.innerText == "Copy")) {
+    await new Promise((resolve, reject) => {
+      navigator.clipboard.writeText = async arg => {
+        md += arg.trimEnd() + "\n";
+        resolve();
+      };
+      try {
+        copy.click();
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+  navigator.clipboard.writeText = navigator.clipboard._writeText;
   return md
 }
 
@@ -120,7 +136,7 @@ function mdFromDOM(topEl, md) {
   return md
 }
 
-(function exportMarkdown() {
+(async function exportMarkdown() {
   var markdown = "";
   // var elements = document.querySelectorAll("[class*='min-h-[20px]']");
 
@@ -146,10 +162,11 @@ function mdFromDOM(topEl, md) {
     // Claude reponses have a different DOM structure than prompts
     if (ele.classList.contains("font-claude-message")) {
       markdown += `## Claude:\n`;
-      if (firstChild.tagName == 'DIV' && firstChild.childNodes.length == 1 && !!firstChild.classList) {
-        firstChild = firstChild.firstChild
-      }
-      markdown = mdFromDOM(firstChild, markdown)
+      markdown = await mdFromCopyButton(ele, markdown)
+      // if (firstChild.tagName == 'DIV' && firstChild.childNodes.length == 1 && !!firstChild.classList) {
+      //   firstChild = firstChild.firstChild
+      // }
+      // markdown = mdFromDOM(firstChild, markdown)
     } else {
       markdown += `## Me:\n`;
       markdown = mdFromDOM(ele, markdown)
